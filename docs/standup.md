@@ -381,6 +381,17 @@ Gateway class options (set via `gateway.className` in the scenario YAML):
 `none` is a baseline lane, not a routing topology. It requires at least one
 decode replica and does not support P/D disaggregation.
 
+### Gateway access logging (Istio only)
+
+Set `gateway.accessLogging` in the scenario YAML to control the llm-d-infra chart's `gateway.gatewayParameters.istio.accessLogging`, which deploys the Istio `Telemetry` object that enables gateway access logs. The chart default is `true`; set `false` to turn the noisy logging off.
+
+```yaml
+gateway:
+  accessLogging: false
+```
+
+When the key is unset, nothing is rendered and the chart default applies. It only applies to the default Istio branch (`istio` and custom Istio-backed class names); `agentgateway`, `gke` and `data-science-gateway-class` ignore it.
+
 ### Overriding `gateway.className` from the CLI
 
 Every subcommand that renders templates (`plan`, `standup`, `update`,

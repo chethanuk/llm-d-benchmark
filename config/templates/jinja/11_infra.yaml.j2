@@ -100,6 +100,10 @@ gateway:
       requests:
         cpu: "{{ gateway.resources.requests.cpu }}"
         memory: {{ gateway.resources.requests.memory }}
+{% if gateway.accessLogging is defined and gateway.accessLogging is not none %}
+    istio:
+      accessLogging: {{ gateway.accessLogging | lower }}
+{% endif %}
   service:
     type: {{ gateway.service.type }}
 {% if gateway.listenerPort is defined and gateway.listenerPort %}
