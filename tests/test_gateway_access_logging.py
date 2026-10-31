@@ -66,9 +66,7 @@ def _render(renderer, template, gw_class, access_logging=_UNSET) -> dict:
 def test_istio_renders_boolean(renderer, template, gw_class, value):
     doc = _render(renderer, template, gw_class, value)
     expected = str(value).lower() == "true"
-    assert doc["gateway"]["gatewayParameters"]["istio"] == {
-        "accessLogging": expected
-    }
+    assert doc["gateway"]["gatewayParameters"]["istio"] == {"accessLogging": expected}
 
 
 @pytest.mark.parametrize("gw_class", ["istio", "custom-istio-class"])
