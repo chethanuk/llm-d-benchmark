@@ -160,6 +160,13 @@ def _stats(values: list[float]) -> dict:
     return {"peak": int(max(values)), "mean": round(sum(values) / len(values), 2)}
 
 
+def _p95(values: list[int]) -> int | None:
+    """Nearest rank, so the result is always a replica count that was sampled."""
+    if not values:
+        return None
+    return sorted(values)[math.ceil(len(values) * 95 / 100) - 1]
+
+
 def _against_demand(
     series: dict[float, float], timestamps: list[float], demand: list[int]
 ) -> dict | None:
@@ -246,6 +253,7 @@ def size_stage(so: dict, stage: Stage, fetch: Fetch) -> dict:
         "maxReplicas": hi,
         "demand": {
             **_stats(demand),
+            "p95": _p95(demand),
             "drivenBy": driver_at_peak,
             "unclampedPeak": raw_peak,
         },

@@ -19,6 +19,7 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
+import pytest
 import yaml
 
 from llmdbenchmark.run.autoscaling_sizing import (
@@ -105,6 +106,32 @@ def test_the_max_replica_cap_is_reported():
     row = size_stage(_so(max_replicas=2), STAGE, _fetch({"running": [80]}))
     assert row["demand"]["peak"] == 2
     assert row["demand"]["unclampedPeak"] == 5
+
+
+# 72 running is 5 replicas, 84 is 6. The spike sits on the rank index in the
+# n=40 and n=20 cases, so a p95 taken without sorting would report it.
+@pytest.mark.parametrize(
+    "running, max_replicas, p95, peak",
+    [
+        pytest.param([72] * 37 + [84] + [72] * 2, 10, 5, 6, id="spike_among_many"),
+        pytest.param([72] * 18 + [84, 72], 10, 5, 6, id="one_spike_in_20_is_hidden"),
+        pytest.param([84] + [72] * 18, 10, 6, 6, id="one_spike_in_19_sets_p95"),
+        pytest.param([84], 10, 6, 6, id="single_sample"),
+        pytest.param([72] * 40, 10, 5, 5, id="flat_series"),
+        pytest.param([80] * 20, 2, 2, 2, id="clamped_at_max"),
+        pytest.param([], 10, None, None, id="no_samples"),
+    ],
+)
+def test_demand_p95_is_the_sustained_level_not_a_single_spike(
+    running, max_replicas, p95, peak
+):
+    row = size_stage(
+        _so(max_replicas=max_replicas), STAGE, _fetch({"running": running})
+    )
+    assert row["demand"]["p95"] == p95
+    assert row["demand"]["peak"] == peak
+    assert "p95" not in row["decision"]
+    assert "p95" not in row["provisioned"]
 
 
 def test_decision_and_pool_are_compared_with_demand():
@@ -197,6 +224,7 @@ def test_write_sizing_names_the_max_replicas(tmp_path):
     assert "running-requests reached 50 against 16 per replica" in text
     rows = json.loads((out / "autoscaling-sizing.json").read_text())["rows"]
     assert {r["stage"] for r in rows} == {"stage 0", "stage 1", "whole run"}
+    assert {r["demand"]["p95"] for r in rows} == {4}
 
 
 def test_nothing_is_written_without_a_scaled_object(tmp_path):
