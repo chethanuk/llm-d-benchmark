@@ -59,6 +59,8 @@ LEGACY_AGGREGATE_METRICS = {
     "llm_d_epp_flow_control_pool_saturation",
     "llm_d_epp_flow_control_queue_size",
     "llm_d_epp_request_running",
+    # Prefill scale trigger of the keda-epp-token-aware guides
+    "llm_d_epp_inflight_tokens",
 }
 AGGREGATE_METRICS = (
     TIME_SERIES_METRIC_SET
@@ -127,6 +129,7 @@ METRIC_UNITS = {
     "llm_d_epp_flow_control_pool_saturation": "ratio",
     "llm_d_epp_flow_control_queue_size": "count",
     "llm_d_epp_request_running": "count",
+    "llm_d_epp_inflight_tokens": "tokens",
     "inference_extension_scheduler_e2e_duration_seconds_bucket": "seconds",
     "inference_extension_scheduler_e2e_duration_seconds_sum": "seconds",
     "inference_extension_scheduler_e2e_duration_seconds_count": "count",

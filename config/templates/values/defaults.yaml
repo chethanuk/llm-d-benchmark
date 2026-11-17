@@ -576,6 +576,7 @@ monitoring:
     - llm_d_epp_flow_control_pool_saturation
     - llm_d_epp_flow_control_queue_size
     - llm_d_epp_request_running
+    - llm_d_epp_inflight_tokens
 
 # ============================================================================
 # ACCELERATOR CONFIGURATION
