@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
+import yaml
 
 from llmdbenchmark.analysis.benchmark_report.metrics_processor import (
     add_metrics_to_benchmark_report,
@@ -43,6 +44,52 @@ def test_process_metrics_uses_configured_metric_list(
     assert json.loads(
         (processed_dir / "time_series_metrics.json").read_text(encoding="utf-8")
     ) == ["vllm:custom_metric"]
+
+
+@pytest.mark.parametrize(
+    ("metric", "unit"),
+    [
+        ("llm_d_epp_request_running", "count"),
+        # Prefill scale trigger of the keda-epp-token-aware guides.
+        ("llm_d_epp_inflight_tokens", "tokens"),
+    ],
+)
+@pytest.mark.parametrize("configured", [True, False], ids=["defaults", "legacy"])
+def test_epp_scale_trigger_metric_is_aggregated(
+    tmp_path: Path, monkeypatch, metric: str, unit: str, configured: bool
+) -> None:
+    metrics_dir = tmp_path / "metrics"
+    raw_dir = metrics_dir / "raw"
+    raw_dir.mkdir(parents=True)
+    (metrics_dir / "processed").mkdir()
+    (raw_dir / "epp-1_metrics.log").write_text(
+        "# Timestamp: 2026-07-14T00:00:00Z\n"
+        "# Pod: epp-1\n"
+        "# Namespace: bench\n"
+        f'{metric}{{endpoint_name="p-0",namespace="bench"}} 100\n'
+        f'{metric}{{endpoint_name="p-1",namespace="bench"}} 300\n',
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("METRICS_DIR", str(metrics_dir))
+    if configured:
+        defaults = yaml.safe_load(
+            Path("config/templates/values/defaults.yaml").read_text(encoding="utf-8")
+        )
+        monkeypatch.setenv(
+            "LLMDBENCH_TIME_SERIES_METRICS",
+            json.dumps(defaults["monitoring"]["timeSeriesMetrics"]),
+        )
+    else:
+        monkeypatch.delenv("LLMDBENCH_TIME_SERIES_METRICS", raising=False)
+
+    module = runpy.run_path(
+        "workload/harnesses/process_metrics.py", run_name="process_metrics_test"
+    )
+    summary = module["aggregate_metrics"]()
+
+    stats = summary["_aggregated"]["metrics"][metric]
+    assert stats["unit"] == unit
+    assert stats["max"] == 300
 
 
 def test_report_includes_configured_custom_metric(tmp_path: Path) -> None:

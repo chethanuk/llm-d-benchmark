@@ -1433,6 +1433,8 @@ When flow control is enabled (see [KV Transfer Configuration](#kv-transfer-confi
   EPP-saturation scale trigger (`saturationThreshold`)
 - `llm_d_epp_request_running` -- running requests; KEDA EPP-saturation scale
   trigger (`runningRequestsThreshold`)
+- `llm_d_epp_inflight_tokens` -- in-flight tokens per endpoint (only with the
+  `inflight-load-producer`); prefill trigger of the `keda-epp-token-aware` guides
 
 #### CLI monitoring flags (`--monitoring` / `--no-monitoring`)
 
